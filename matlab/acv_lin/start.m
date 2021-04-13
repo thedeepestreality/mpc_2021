@@ -1,5 +1,6 @@
+global Ay by bdu H f u_prev xd;
 global A B;
-
+u_prev = 0;
 u0 = 0;
 x0 = [0;0;0];
 
@@ -30,12 +31,19 @@ Klqr = -lqr(A,B,Q,R);
 Kdlqr = -dlqr(Ad,Bd,Q,R);
 eig(A+B*Klqr)';
 
-P = 10;
-[Kmpc,~,~,~,~] = mpc_lin(Ad,Bd,C,Q,R,P);
+P = 20;
+[Kmpc,H,f,M,L] = mpc_lin(Ad,Bd,C,Q,R,P);
 eig(A+B*Kdlqr)';
+
+ymax = repmat([6*pi/180;pi;180*pi/180],P,1);
+ymin = repmat([-pi;-pi;-180*pi/180],P,1);
+Ay = [M;-M];
+by = [ymax;-ymin];
+bdu =[-L;L];
 
 % regime = 1; %No control
 % regime = 2; %Pid
 % regime = 3; %Poles
 % regime = 4; %LQR
- regime = 5; % MPC Lin Noconstr
+% regime = 5; % MPC Lin Noconstr
+ regime = 6; % MPC Lin Constr
