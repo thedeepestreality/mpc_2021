@@ -9,11 +9,12 @@ for i=1:P
    L = [L;C*(A^i)];
    M0 = [M0; C*(A^(i-1))*B];
 end
-M = M0
+M = M0;
 [m,n] = size(C*B);
 for i=1:(P-1)
    M = [M, [zeros(i*m,n); M0(1:m*(P-i),:)]];
 end
+
 H = M'*R*M+Q;
 f = M'*R*L;
 K = -H\f;

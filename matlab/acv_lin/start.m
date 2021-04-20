@@ -1,4 +1,4 @@
-global Ay by bdu H f u_prev xd;
+global Ay by bdu H f u_prev xd P;
 global A B;
 u_prev = 0;
 u0 = 0;
@@ -25,8 +25,8 @@ roots = [-10;-20;-30;];
 %roots = [-100;-1;-1.1;-1.2];
 Kmod = -place(A,B,roots);
 
-Q = diag([1 1 1e3]);
-R = 1e-2;
+Q = diag([1 1 1e4]);
+R = 1e-3;
 Klqr = -lqr(A,B,Q,R);
 Kdlqr = -dlqr(Ad,Bd,Q,R);
 eig(A+B*Klqr)';
@@ -35,11 +35,40 @@ P = 20;
 [Kmpc,H,f,M,L] = mpc_lin(Ad,Bd,C,Q,R,P);
 eig(A+B*Kdlqr)';
 
-ymax = repmat([6*pi/180;pi;180*pi/180],P,1);
-ymin = repmat([-pi;-pi;-180*pi/180],P,1);
-Ay = [M;-M];
-by = [ymax;-ymin];
-bdu =[-L;L];
+ymax = repmat([pi;180*pi/180;0*pi/180],P,1);
+ymin = repmat([-pi;-180*pi;-8*pi/180],P,1);
+umax = repmat(10000*pi/180,P,1);
+umin = repmat(-10000*pi/180,P,1);
+n = size(L,2);
+% scalar weak variable
+% V = ones(n*P,1);
+% Ay = [M -V;
+%     -M -V;
+%     zeros(1,P) -1];
+% by = [ymax;
+%     -ymin;
+%     0];
+% bdu =[-L;
+%     L;
+%     zeros(1,n)];
+
+V = eye(n*P,P);
+Ay = [M -V;
+    -M -V;
+    zeros(P) -eye(P)];
+by = [ymax;
+    -ymin;
+    zeros(P,1)];
+bdu =[-L;
+    L;
+    zeros(P,n)];
+
+% Au = [eye(P);-eye(P)];
+% bu = [umax;-umin];
+% 
+% Ay = [Ay;Au];
+% by = [by;bu];
+% bdu = [bdu;zeros(2*P,size(L,2))];
 
 % regime = 1; %No control
 % regime = 2; %Pid
