@@ -1,11 +1,15 @@
-global Ay by bdu H f u_prev xd P;
+clear;
+global Ay by bdu H f x_prev u_prev xd P;
+global Ay_ast by_ast bdu_ast H_ast f_ast Kmpc_ast;
 global A B;
 u_prev = 0;
 u0 = 0;
 x0 = [0;0;0];
+x_prev = x0;
 
 kp = 20*[-1 1 -1];
 xd = [0;0;10*pi/180];
+%xd = [0;1*pi/180;0];
 
 A = [-0.3176 0.852 0;
      -0.0102 -0.1383 0;
@@ -37,42 +41,36 @@ eig(A+B*Kdlqr)';
 
 ymax = repmat([pi;180*pi/180;0*pi/180],P,1);
 ymin = repmat([-pi;-180*pi;-8*pi/180],P,1);
-umax = repmat(10000*pi/180,P,1);
-umin = repmat(-10000*pi/180,P,1);
-n = size(L,2);
-% scalar weak variable
-% V = ones(n*P,1);
-% Ay = [M -V;
-%     -M -V;
-%     zeros(1,P) -1];
-% by = [ymax;
-%     -ymin;
-%     0];
-% bdu =[-L;
-%     L;
-%     zeros(1,n)];
+% umax = repmat(10000*pi/180,P,1);
+% umin = repmat(-10000*pi/180,P,1);
 
-V = eye(n*P,P);
-Ay = [M -V;
-    -M -V;
-    zeros(P) -eye(P)];
-by = [ymax;
-    -ymin;
-    zeros(P,1)];
-bdu =[-L;
-    L;
-    zeros(P,n)];
+[Ay, by, bdu] = mpc_linconstr(P,M,L,ymin,ymax);
 
-% Au = [eye(P);-eye(P)];
-% bu = [umax;-umin];
-% 
-% Ay = [Ay;Au];
-% by = [by;bu];
-% bdu = [bdu;zeros(2*P,size(L,2))];
+% ASTATIC MPC
+%{
+A_ast = [Ad zeros(3,3);
+         C*Ad eye(3,3)];
+B_ast = [Bd; C*Bd];
+C = [zeros(3,3) eye(3,3)];
+[Kmpc_ast,~,~,~,~] = mpc_lin(A_ast,B_ast,C,Q,R,P);
+%}
+
+C = [0 0 1];
+A_ast = [Ad zeros(3,1);
+         C*Ad eye(1)];
+B_ast = [Bd; C*Bd];
+C_ast = [zeros(1,3) eye(1)];
+Q = 1e4;
+[Kmpc_ast,H_ast,f_ast,M_ast,L_ast] = mpc_lin(A_ast,B_ast,C_ast,Q,R,P);
+ymax = repmat(0*pi/180,P,1);
+ymin = repmat(-8*pi/180,P,1);
+[Ay_ast, by_ast, bdu_ast] = mpc_linconstr(P,M_ast,L_ast,ymin,ymax);
 
 % regime = 1; %No control
 % regime = 2; %Pid
 % regime = 3; %Poles
 % regime = 4; %LQR
 % regime = 5; % MPC Lin Noconstr
- regime = 6; % MPC Lin Constr
+% regime = 6; % MPC Lin Constr
+% regime = 7; % MPC Ast Noconstr
+regime = 8; % MPC Ast Constr
